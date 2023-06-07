@@ -70,9 +70,10 @@ extension ViewController {
 
 extension ViewController: UITableViewDataSource {
   func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-    guard let results = searchResult?.results else { return 0
+    guard let results = searchResult?.results else {
+      return 0
+//      Because searchResult is an optional and if nothing is there... you get the idea.
     }
-    print(results.count)
     return results.count
   }
   
@@ -99,35 +100,45 @@ extension ViewController {
   }
 }
 
+// Using an Enum for your endpoint desitations makes your networking methods a bit more flexible
 enum EndPoint: String {
   case search
 }
 
+// same
 enum Language: String {
   case englishUS = "en-US"
 }
 
 extension ViewController {
   private func getMovie(named name: String) {
+//    from tmdb documentation
     let headers = [
       "accept": "application/json",
       "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmNDZkMGY5ZjZiNzdkNTUxYzM5OWQ4Y2M4M2Y3YjA3YiIsInN1YiI6IjYxNmYxYzdjMTNhMzIwMDA0NGUxNjQ0ZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.rjEtdhTPaqiaw6klq6nMkE2_7V0Cn8qAGbWtIfsv6Xo"
     ]
+
+//    I prefer to break things up rather than have a huge string of meaningless gibberish
     let baseURL = "https://api.themoviedb.org/3/"
     let endpoint = EndPoint.search.rawValue
     let include_adult: Bool = true
     let language = Language.englishUS.rawValue
     let currentPage = 1
+    
+//    This is not recommended, but it's quick and easy.
     let url = "\(baseURL)\(endpoint)/movie?query=\(name)&include_adult\(include_adult)&language=\(language)&page=\(currentPage)"
     
+//    This a better way to do the same: https://cocoacasts.com/working-with-nsurlcomponents-in-swift
+    
+//    from tmdb documentation
     let request = NSMutableURLRequest(url: NSURL(string: url)! as URL,
                                       cachePolicy: .useProtocolCachePolicy,
                                       timeoutInterval: 10.0)
     request.httpMethod = "GET"
     request.allHTTPHeaderFields = headers
-    print(url)
     let session = URLSession.shared
     let dataTask = session.dataTask(with: request as URLRequest, completionHandler: { (data, response, error) -> Void in
+//      I think this might be the part you're missing. Gotta make sure it's all happening on the main thread and then reloading the table data before exiting.
       DispatchQueue.main.async {
         guard let data = data, error == nil else {
           return
